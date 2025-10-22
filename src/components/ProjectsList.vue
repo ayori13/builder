@@ -1,3 +1,59 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { RouterLink } from 'vue-router'
+// если используешь роли — раскомментируй:
+// import { useAuth } from '@/composables/useAuth'
+// const { user } = useAuth()
+
+const projects = ref([])
+
+// фильтры/поиск/сортировка
+const q = ref('')
+const fPriority = ref('')
+const fStatus = ref('') // 'done' | 'open' | ''
+const sortBy = ref('createdDesc') // createdDesc | deadlineAsc | deadlineDesc | titleAsc | titleDesc
+
+onMounted(() => {
+  const saved = localStorage.getItem('projects')
+  projects.value = saved ? JSON.parse(saved) : []
+})
+
+function norm(s) {
+  return String(s ?? '').toLowerCase().trim()
+}
+
+const view = computed(() => {
+  let arr = [...projects.value]
+
+  const query = norm(q.value)
+  if (query) arr = arr.filter(p => norm(p.title).includes(query))
+
+  if (fPriority.value) arr = arr.filter(p => p.priority === fPriority.value)
+
+  if (fStatus.value === 'done') arr = arr.filter(p => !!p.done)
+  else if (fStatus.value === 'open') arr = arr.filter(p => !p.done)
+
+  const byTitle = (a, b) => norm(a.title).localeCompare(norm(b.title))
+  const byDeadline = (a, b) => (a.deadline || '').localeCompare(b.deadline || '')
+  const byCreatedDesc = (a, b) => Number(b.id) - Number(a.id) // если id = Date.now()
+
+  switch (sortBy.value) {
+    case 'titleAsc': arr.sort(byTitle); break
+    case 'titleDesc': arr.sort((a,b) => byTitle(b,a)); break
+    case 'deadlineAsc': arr.sort(byDeadline); break
+    case 'deadlineDesc': arr.sort((a,b) => byDeadline(b,a)); break
+    default: arr.sort(byCreatedDesc)
+  }
+  return arr
+})
+
+function removeProject(id) {
+  if (!confirm('Удалить проект?')) return
+  projects.value = projects.value.filter(p => p.id !== id)
+  localStorage.setItem('projects', JSON.stringify(projects.value))
+}
+</script>
+
 <template>
   <div class="container sp-8">
     <h2 class="h2 mb-4">Список проектов</h2>
@@ -66,8 +122,10 @@
             <td>
               <div class="actions">
                 <RouterLink :to="`/projects/${p.id}`" class="btn btn--outline">Открыть</RouterLink>
+
+                <!-- если будешь включать роли — оберни ниже в v-if="user.role === 'admin'" -->
                 <RouterLink :to="`/projects/edit/${p.id}`" class="btn btn--outline">Редактировать</RouterLink>
-                <button @click="remove(p.id)" class="btn btn--danger">Удалить</button>
+                <button @click="removeProject(p.id)" class="btn btn--danger">Удалить</button>
               </div>
             </td>
           </tr>
@@ -82,59 +140,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { RouterLink } from 'vue-router'
-
-const projects = ref([])
-
-// фильтры/поиск/сортировка
-const q = ref('')
-const fPriority = ref('')
-const fStatus = ref('') // 'done' | 'open' | ''
-const sortBy = ref('createdDesc') // createdDesc | deadlineAsc | deadlineDesc | titleAsc | titleDesc
-
-onMounted(() => {
-  const saved = localStorage.getItem('projects')
-  projects.value = saved ? JSON.parse(saved) : []
-})
-
-function norm(s) {
-  return String(s ?? '').toLowerCase().trim()
-}
-
-const view = computed(() => {
-  let arr = [...projects.value]
-
-  const query = norm(q.value)
-  if (query) arr = arr.filter(p => norm(p.title).includes(query))
-
-  if (fPriority.value) arr = arr.filter(p => p.priority === fPriority.value)
-
-  if (fStatus.value === 'done') arr = arr.filter(p => !!p.done)
-  else if (fStatus.value === 'open') arr = arr.filter(p => !p.done)
-
-  const byTitle = (a, b) => norm(a.title).localeCompare(norm(b.title))
-  const byDeadline = (a, b) => (a.deadline || '').localeCompare(b.deadline || '')
-  const byCreatedDesc = (a, b) => Number(b.id) - Number(a.id) // если id = Date.now()
-
-  switch (sortBy.value) {
-    case 'titleAsc': arr.sort(byTitle); break
-    case 'titleDesc': arr.sort((a,b) => byTitle(b,a)); break
-    case 'deadlineAsc': arr.sort(byDeadline); break
-    case 'deadlineDesc': arr.sort((a,b) => byDeadline(b,a)); break
-    default: arr.sort(byCreatedDesc)
-  }
-  return arr
-})
-
-function remove(id) {
-  if (!confirm('Удалить проект?')) return
-  projects.value = projects.value.filter(p => p.id !== id)
-  localStorage.setItem('projects', JSON.stringify(projects.value))
-}
-</script>
 
 <style scoped>
 .mb-4 { margin-bottom: 1rem; }
