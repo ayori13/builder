@@ -1,99 +1,83 @@
 <template>
-  <div>
-    <h2>Список проектов</h2>
-    <button @click="goToAdd" class="add-button">Добавить новый проект</button>
-    <table class="projects-table">
-      <thead>
-        <tr>
-          <th>Название</th>
-          <th>Дедлайн</th>
-          <th>Статус</th>
-          <th>Приоритет</th>
-          <th>Действия</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="project in projects" :key="project.id">
-          <td>{{ project.title }}</td>
-          <td>{{ project.deadline || '—' }}</td>
-          <td>{{ project.done ? 'Выполнен' : 'Не выполнен' }}</td>
-          <td>{{ project.priority }}</td>
-          <td>
-            <!-- Кнопка/ссылка просмотра -->
-            <RouterLink :to="`/projects/${project.id}`" class="action-link">Просмотр</RouterLink>
-            <!-- Кнопка/ссылка редактирования -->
-            <RouterLink :to="`/projects/edit/${project.id}`" class="action-link">Редактировать</RouterLink>
-            <!-- Кнопка удаления -->
-            <button @click="deleteProject(project.id)" class="action-link delete-btn">Удалить</button>
-          </td>
-        </tr>
-        <tr v-if="projects.length === 0">
-          <td colspan="5" style="text-align:center; padding: 1em;">Проектов пока нет.</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="container sp-8">
+    <h2 class="h2 mb-4">Список проектов</h2>
+
+    <div v-if="projects.length">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>Описание</th>
+            <th>Дедлайн</th>
+            <th>Приоритет</th>
+            <th>Статус</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in projects" :key="p.id">
+            <td>{{ p.title }}</td>
+            <td>{{ p.description || '—' }}</td>
+            <td>{{ p.deadline || '—' }}</td>
+            <td>
+              <span
+                class="badge"
+                :class="{
+                  'badge--new': p.priority === 'Низкий',
+                  'badge--progress': p.priority === 'Средний',
+                  'badge--open': p.priority === 'Высокий'
+                }"
+              >
+                {{ p.priority }}
+              </span>
+            </td>
+            <td>
+              <span
+                class="badge"
+                :class="{
+                  'badge--done': p.done,
+                  'badge--open': !p.done
+                }"
+              >
+                {{ p.done ? 'Выполнен' : 'Не выполнен' }}
+              </span>
+            </td>
+            <td>
+              <RouterLink :to="`/projects/edit/${p.id}`" class="btn btn--outline">Редактировать</RouterLink>
+              <button @click="remove(p.id)" class="btn btn--danger" style="margin-left: 4px;">Удалить</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p v-else class="muted">Проектов пока нет</p>
+
+    <div class="mt-6">
+      <RouterLink to="/projects/add" class="btn btn--solid">Добавить новый проект</RouterLink>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter, RouterLink } from 'vue-router';
+import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 
-const projects = ref([]); // реактивный массив проектов
-const router = useRouter();
+const projects = ref([])
 
-// Функция для загрузки списка проектов из localStorage
-function loadProjects() {
-  const saved = localStorage.getItem('projects');
-  projects.value = saved ? JSON.parse(saved) : [];
-}
-
-// При монтировании компонента загружаем проекты
 onMounted(() => {
-  loadProjects();
-});
+  const saved = localStorage.getItem('projects')
+  projects.value = saved ? JSON.parse(saved) : []
+})
 
-// Навигация к странице добавления
-function goToAdd() {
-  router.push('/projects/add');
-}
-
-// Удаление проекта по id
-function deleteProject(id) {
-  // Запрашиваем подтверждение от пользователя
-  if (!confirm('Вы уверены, что хотите удалить этот проект?')) {
-    return; // если отменил, выходим
-  }
-  // 1. Удаляем из реактивного массива
-  projects.value = projects.value.filter(project => project.id !== id);
-  // 2. Сохраняем обновлённый список в localStorage
-  localStorage.setItem('projects', JSON.stringify(projects.value));
+function remove(id) {
+  if (!confirm('Удалить проект?')) return
+  projects.value = projects.value.filter(p => p.id !== id)
+  localStorage.setItem('projects', JSON.stringify(projects.value))
 }
 </script>
 
-<style>
-.projects-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1em;
-}
-.projects-table th, .projects-table td {
-  border: 1px solid #ccc;
-  padding: 0.5em;
-}
-.add-button {
-  margin-bottom: 0.5em;
-}
-.action-link {
-  margin-right: 0.5em;
-  background: none;
-  border: none;
-  color: blue;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}
-.delete-btn {
-  color: red;
-}
+<style scoped>
+.mb-4 { margin-bottom: 1rem; }
+.table th, .table td { vertical-align: top; }
 </style>
