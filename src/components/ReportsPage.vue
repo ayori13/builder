@@ -1,16 +1,24 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Pie } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from 'chart.js'
+import { Pie, Bar } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale
+} from 'chart.js'
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement)
+// регистрация модулей
+ChartJS.register(Title, Tooltip, Legend, ArcElement, BarElement, CategoryScale, LinearScale)
 
-// реактивные данные
 const projects = ref([])
 
 onMounted(() => {
   loadProjects()
-  // слушаем изменения localStorage — если в другом окне что-то поменялось
   window.addEventListener('storage', loadProjects)
 })
 
@@ -24,14 +32,12 @@ const stats = computed(() => {
   const total = projects.value.length
   const done = projects.value.filter(p => p.done).length
   const open = total - done
-  const overdue = projects.value.filter(
-    p => !p.done && p.deadline && p.deadline < today
-  ).length
+  const overdue = projects.value.filter(p => !p.done && p.deadline && p.deadline < today).length
   return { total, done, open, overdue }
 })
 
-// данные для графика
-const chartData = computed(() => ({
+// Pie chart: статус проектов
+const pieData = computed(() => ({
   labels: ['Выполнено', 'Не выполнено', 'Просрочено'],
   datasets: [
     {
@@ -42,21 +48,60 @@ const chartData = computed(() => ({
   ]
 }))
 
-const chartOptions = {
+const pieOptions = {
   responsive: true,
   plugins: {
     legend: {
       position: 'bottom',
-      labels: {
-        color: 'var(--text)',
-        font: { size: 14, family: 'var(--font)' }
-      }
+      labels: { color: 'var(--text)', font: { size: 14 } }
     },
     title: {
       display: true,
       text: 'Статус проектов',
       color: 'var(--text)',
       font: { size: 18, weight: 'bold' }
+    }
+  }
+}
+
+// Bar chart: приоритеты проектов
+const barData = computed(() => {
+  const count = { Высокий: 0, Средний: 0, Низкий: 0 }
+  projects.value.forEach(p => {
+    if (p.priority && count[p.priority] !== undefined) count[p.priority]++
+  })
+  return {
+    labels: Object.keys(count),
+    datasets: [
+      {
+        label: 'Количество проектов',
+        data: Object.values(count),
+        backgroundColor: ['#f87171', '#facc15', '#60a5fa']
+      }
+    ]
+  }
+})
+
+const barOptions = {
+  responsive: true,
+  plugins: {
+    legend: { display: false },
+    title: {
+      display: true,
+      text: 'Проекты по приоритетам',
+      color: 'var(--text)',
+      font: { size: 18, weight: 'bold' }
+    }
+  },
+  scales: {
+    x: {
+      ticks: { color: 'var(--text)' },
+      grid: { color: 'var(--border)' }
+    },
+    y: {
+      ticks: { color: 'var(--text)' },
+      grid: { color: 'var(--border)' },
+      beginAtZero: true
     }
   }
 }
@@ -67,7 +112,7 @@ const chartOptions = {
     <h2 class="h2 mb-4">Отчёты по проектам</h2>
 
     <div v-if="stats.total" class="grid">
-      <!-- Карточка статистики -->
+      <!-- Статистика -->
       <div class="card" style="padding:20px;">
         <h3 class="h2 mb-2">Сводка</h3>
         <ul style="list-style:none;padding:0;margin:0;font-size:16px;">
@@ -78,9 +123,13 @@ const chartOptions = {
         </ul>
       </div>
 
-      <!-- Диаграмма -->
-      <div class="card" style="padding:20px;display:flex;justify-content:center;align-items:center;">
-        <Pie :data="chartData" :options="chartOptions" style="max-width:400px;"/>
+      <!-- Диаграммы -->
+      <div class="card chart-card">
+        <Pie :data="pieData" :options="pieOptions" />
+      </div>
+
+      <div class="card chart-card">
+        <Bar :data="barData" :options="barOptions" />
       </div>
     </div>
 
@@ -91,7 +140,14 @@ const chartOptions = {
 <style scoped>
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 24px;
+}
+
+.chart-card {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
