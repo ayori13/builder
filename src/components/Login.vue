@@ -1,86 +1,49 @@
 <template>
-  <div class="login-wrap">
-    <h2>Вход</h2>
+  <div class="container sp-8" style="max-width:400px;">
+    <h2 class="h2 mb-4">Вход в систему</h2>
 
-    <!-- Сообщение об ошибке -->
-    <p v-if="error" class="error">{{ error }}</p>
-
-    <!-- Форма авторизации -->
-    <form @submit.prevent="onSubmit" class="login-form">
+    <form @submit.prevent="handleLogin" class="card" style="padding:24px;">
       <div class="form-field">
-        <label for="username">Логин (или e-mail)</label>
-        <input
-          id="username"
-          v-model="username"
-          type="text"
-          placeholder="user@email.com"
-          autocomplete="username"
-          required
-        />
+        <label for="email">Email:</label>
+        <input id="email" v-model="email" type="email" class="input" required placeholder="example@example.com" />
       </div>
 
       <div class="form-field">
-        <label for="password">Пароль</label>
-        <input
-          id="password"
-          v-model="password"
-          type="password"
-          placeholder="••••••••"
-          autocomplete="current-password"
-          required
-        />
+        <label for="password">Пароль:</label>
+        <input id="password" v-model="password" type="password" class="input" required />
       </div>
 
-      <button type="submit" class="btn">Войти</button>
+      <p class="muted" style="font-size:14px;">Демо-аккаунты:<br>
+        engineer@example.com<br>
+        manager@example.com<br>
+        director@example.com<br>
+        Пароль: 1234
+      </p>
+
+      <button type="submit" class="btn btn--solid mt-2">Войти</button>
+
+      <p v-if="error" style="color:var(--danger); margin-top:10px;">{{ error }}</p>
     </form>
-
-    <p class="hint">
-      Подсказка: для демо подойдут любые непустые логин/пароль.
-    </p>
   </div>
 </template>
 
 <script setup>
-// Простой экран авторизации.
-// Логика: берём username/password, зовём useAuth().login(), редиректим
-// на redirect (если был), иначе — на /projects.
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
-import { ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuth } from '@/composables/useAuth';
+const router = useRouter()
+const { login } = useAuth()
+const email = ref('')
+const password = ref('')
+const error = ref('')
 
-const route = useRoute();
-const router = useRouter();
-const { login, isAuthenticated } = useAuth();
-
-const username = ref('');
-const password = ref('');
-const error = ref('');
-
-// Сабмит формы:
-async function onSubmit() {
-  error.value = '';
-  try {
-    await login({ username: username.value.trim(), password: password.value.trim() });
-    // Если до логина пользователь шёл на защищённый маршрут — вернём его туда:
-    const redirect = (route.query.redirect && String(route.query.redirect)) || '/projects';
-    // Если уже авторизован — просто переход:
-    if (isAuthenticated.value) {
-      router.push(redirect);
-    }
-  } catch (e) {
-    // В нашем примере login бросает ошибку, если поля пустые.
-    error.value = e?.message || 'Не удалось войти';
+function handleLogin() {
+  const result = login(email.value.trim(), password.value.trim())
+  if (result.success) {
+    router.push('/projects')
+  } else {
+    error.value = result.message
   }
 }
 </script>
-
-<style>
-.login-wrap { max-width: 420px; margin: 2rem auto; }
-.login-form .form-field { margin-bottom: 1rem; }
-.login-form label { display: block; margin-bottom: .25rem; font-weight: 600; }
-.login-form input { width: 100%; padding: .5rem; box-sizing: border-box; }
-.btn { padding: .5rem 1rem; }
-.error { color: #c00; margin-bottom: .5rem; }
-.hint { color: #666; font-size: .9rem; margin-top: .75rem; }
-</style>

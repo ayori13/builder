@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuth } from '../composables/useAuth'
 
 const routes = [
   { path: '/', redirect: '/projects' },
@@ -22,6 +23,12 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior() { return { top: 0 } }
+})
+router.beforeEach((to, from, next) => {
+  const { user } = useAuth()
+  if (!user.value && to.path !== '/login') next('/login')
+  else if (user.value && to.path === '/login') next('/projects')
+  else next()
 })
 
 export default router
