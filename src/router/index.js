@@ -4,18 +4,15 @@ import { useAuth } from '../composables/useAuth'
 const routes = [
   { path: '/', redirect: '/projects' },
 
-  // Если нет страницы логина — можно удалить этот маршрут
-  { path: '/login', name: 'Login', component: () => import('../components/Login.vue') },
+  { path: '/login', name: 'LoginPage', component: () => import('../components/LoginPage.vue') },
 
   { path: '/projects', name: 'ProjectsList', component: () => import('../components/ProjectsList.vue'), meta: { requiresAuth: true } },
   { path: '/projects/add', name: 'ProjectsAdd', component: () => import('../components/ProjectsAdd.vue'), meta: { requiresAuth: true } },
   { path: '/projects/:id', name: 'ProjectsView', component: () => import('../components/ProjectsView.vue'), props: true, meta: { requiresAuth: true } },
   { path: '/projects/edit/:id', name: 'ProjectsEdit', component: () => import('../components/ProjectsEdit.vue'), props: true, meta: { requiresAuth: true } },
 
-  // НОВОЕ: отчёты
   { path: '/reports', name: 'ReportsPage', component: () => import('../components/ReportsPage.vue'), meta: { requiresAuth: true } },
 
-  // 404
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: { template: '<div class="container sp-8 muted">Страница не найдена</div>' } }
 ]
 
