@@ -1,46 +1,48 @@
 <template>
-  <div v-if="loaded">
+  <div class="container sp-8">
     <h2 class="h2">Редактировать проект</h2>
 
-    <form @submit.prevent="handleSubmit" class="project-form mt-6">
-      <div class="form-field">
-        <label for="title">Название:</label>
-        <input id="title" v-model="form.title" type="text" required class="input" />
-      </div>
+    <div v-if="loaded" class="mt-6">
+      <form @submit.prevent="handleSubmit" class="project-form">
+        <div class="form-field">
+          <label for="title">Название:</label>
+          <input id="title" v-model="form.title" type="text" required class="input" />
+        </div>
 
-      <div class="form-field">
-        <label for="description">Описание:</label>
-        <textarea id="description" v-model="form.description" rows="3" class="textarea"></textarea>
-      </div>
+        <div class="form-field">
+          <label for="description">Описание:</label>
+          <textarea id="description" v-model="form.description" rows="3" class="textarea"></textarea>
+        </div>
 
-      <div class="form-field">
-        <label for="deadline">Дедлайн:</label>
-        <input id="deadline" v-model="form.deadline" type="date" class="input" />
-      </div>
+        <div class="form-field">
+          <label for="deadline">Дедлайн:</label>
+          <input id="deadline" v-model="form.deadline" type="date" class="input" />
+        </div>
 
-      <div class="form-field">
-        <label>
-          <input type="checkbox" v-model="form.done" />
-          Выполнен
-        </label>
-      </div>
+        <div class="form-field">
+          <label>
+            <input type="checkbox" v-model="form.done" />
+            Выполнен
+          </label>
+        </div>
 
-      <div class="form-field">
-        <label for="priority">Приоритет:</label>
-        <select id="priority" v-model="form.priority" class="select">
-          <option>Высокий</option>
-          <option>Средний</option>
-          <option>Низкий</option>
-        </select>
-      </div>
+        <div class="form-field">
+          <label for="priority">Приоритет:</label>
+          <select id="priority" v-model="form.priority" class="select">
+            <option>Высокий</option>
+            <option>Средний</option>
+            <option>Низкий</option>
+          </select>
+        </div>
 
-      <button type="submit" class="btn btn--solid">Сохранить изменения</button>
-      <RouterLink to="/projects" class="btn btn--outline" style="margin-left:8px">Отмена</RouterLink>
-    </form>
-  </div>
+        <button type="submit" class="btn btn--solid">Сохранить изменения</button>
+        <RouterLink to="/projects" class="btn btn--outline" style="margin-left: 8px;">Отмена</RouterLink>
+      </form>
+    </div>
 
-  <div v-else>
-    <p class="muted">Загрузка…</p>
+    <div v-else>
+      <p class="muted">Загрузка…</p>
+    </div>
   </div>
 </template>
 
@@ -51,7 +53,6 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
 
-// форма — удобно через reactive (объект)
 const form = reactive({
   title: '',
   description: '',
@@ -60,7 +61,7 @@ const form = reactive({
   priority: 'Средний'
 })
 
-// флаг загрузки — именно ref, не reactive
+// Флаг загрузки — именно ref, иначе не сработает реактивность
 const loaded = ref(false)
 
 onMounted(() => {
@@ -75,7 +76,6 @@ onMounted(() => {
     return
   }
 
-  // заполняем форму
   form.title = existing.title ?? ''
   form.description = existing.description ?? ''
   form.deadline = existing.deadline ?? ''
@@ -110,5 +110,5 @@ function handleSubmit() {
 <style scoped>
 .project-form { max-width: 480px; }
 .form-field { margin-bottom: 1rem; }
-.form-field label { display:block; margin-bottom:.3rem; font-weight:600; }
+.form-field label { display: block; margin-bottom: 0.3rem; font-weight: 600; }
 </style>
