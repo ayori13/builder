@@ -1,0 +1,46 @@
+/* Светлая тема */
+:root {
+  --bg: #ffffff;
+  --text: #0f172a;
+  --muted: #475569;
+  --border: #e2e8f0;
+
+  --surface: #ffffff;
+  --header-bg: #ffffffcc;
+  --header-border: #e2e8f0;
+
+  --brand: #2563eb;
+  --brand-600:#1d4ed8;
+  --danger:#dc2626;
+  --ok:#059669;
+  --warn:#d97706;
+
+  --radius: 14px;
+  --shadow: 0 8px 20px rgba(2,6,23,.06);
+
+  --font: "Inter", system-ui, "Segoe UI", Roboto, Ubuntu, sans-serif;
+
+  --h1: clamp(28px, 3.5vw, 36px);
+  --h2: clamp(22px, 3vw, 28px);
+  --text-lg: clamp(16px, 2vw, 18px);
+}
+
+/* Тёмная тема */
+.dark {
+  --bg: #0b0b11;
+  --text: #e5e7eb;
+  --muted:#94a3b8;
+  --border:#334155;
+
+  --surface: #11121a;
+  --header-bg: #11121acc;
+  --header-border: #2b2f3a;
+
+  --brand:#8b5cf6;
+  --brand-600:#7c3aed;
+  --danger:#f87171;
+  --ok:#34d399;
+  --warn:#fbbf24;
+
+  --shadow: 0 12px 28px rgba(0,0,0,.45);
+}

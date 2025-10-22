@@ -8,13 +8,22 @@ a{color:var(--brand); text-decoration:none}
 a:hover{text-decoration:underline}
 button{font:inherit}
 .container{max-width:1120px;margin:0 auto;padding:0 16px}
+
 .card{
-  background:var(--bg); border:1px solid var(--border);
+  background:var(--surface); border:1px solid var(--border);
   border-radius:var(--radius); box-shadow:var(--shadow);
 }
+
 .h1{font-size:var(--h1); font-weight:800; letter-spacing:-0.02em}
 .h2{font-size:var(--h2); font-weight:700}
 .muted{color:var(--muted)}
+
 .sp-8{padding:32px}
 .mt-6{margin-top:24px}
-.mt-2{margin-top:8px}
+.mb-4{margin-bottom: 1rem}
+
+/* утилита-ряд для действий */
+.row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+
+/* на узких экранах таблица скроллится по оси X */
+.table-wrap{overflow:auto; border-radius:14px; border:1px solid var(--border)}

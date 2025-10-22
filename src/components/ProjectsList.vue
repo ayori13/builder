@@ -29,7 +29,7 @@
     </div>
 
     <!-- Таблица -->
-    <div v-if="view.length">
+    <div v-if="view.length" class="table-wrap">
       <table class="table">
         <thead>
           <tr>
@@ -38,7 +38,7 @@
             <th>Дедлайн</th>
             <th>Приоритет</th>
             <th>Статус</th>
-            <th style="width:240px">Действия</th>
+            <th style="width:280px">Действия</th>
           </tr>
         </thead>
         <tbody>
@@ -64,9 +64,11 @@
               </span>
             </td>
             <td>
-              <RouterLink :to="`/projects/${p.id}`" class="btn btn--outline">Открыть</RouterLink>
-              <RouterLink :to="`/projects/edit/${p.id}`" class="btn btn--outline" style="margin-left:6px">Редактировать</RouterLink>
-              <button @click="remove(p.id)" class="btn btn--danger" style="margin-left:6px">Удалить</button>
+              <div class="actions">
+                <RouterLink :to="`/projects/${p.id}`" class="btn btn--outline">Открыть</RouterLink>
+                <RouterLink :to="`/projects/edit/${p.id}`" class="btn btn--outline">Редактировать</RouterLink>
+                <button @click="remove(p.id)" class="btn btn--danger">Удалить</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -136,5 +138,4 @@ function remove(id) {
 
 <style scoped>
 .mb-4 { margin-bottom: 1rem; }
-.table th, .table td { vertical-align: top; }
 </style>
