@@ -2,7 +2,15 @@
 import { RouterLink } from 'vue-router'
 import ThemeToggle from './ThemeToggle.vue'
 import { useAuth } from '@/composables/useAuth'
+import { User, Settings, Wrench } from 'lucide-vue-next'
+
 const { user, logout } = useAuth()
+
+const roleIcon = {
+  engineer: Wrench,
+  manager: Settings,
+  director: User
+}
 </script>
 
 <template>
@@ -13,11 +21,15 @@ const { user, logout } = useAuth()
 
       <nav class="row">
         <RouterLink class="btn btn--outline" to="/projects">Список</RouterLink>
-        <RouterLink class="btn btn--solid" to="/projects/add">Добавить</RouterLink>
+        <RouterLink v-if="user?.role !== 'director'" class="btn btn--solid" to="/projects/add">Добавить</RouterLink>
         <RouterLink class="btn btn--outline" to="/reports">Отчёты</RouterLink>
         <ThemeToggle />
 
-        <button v-if="user" @click="logout" class="btn btn--danger">Выйти</button>
+        <div v-if="user" class="row" style="margin-left:12px;">
+          <component :is="roleIcon[user.role]" size="18" />
+          <span style="font-weight:600;">{{ roleLabel(user.role) }}</span>
+          <button @click="logout" class="btn btn--danger" style="margin-left:6px;">Выйти</button>
+        </div>
       </nav>
     </div>
   </header>
@@ -26,3 +38,18 @@ const { user, logout } = useAuth()
     <slot />
   </main>
 </template>
+
+<script>
+export default {
+  methods: {
+    roleLabel(role) {
+      switch (role) {
+        case 'engineer': return 'Инженер'
+        case 'manager': return 'Менеджер'
+        case 'director': return 'Руководитель'
+        default: return ''
+      }
+    }
+  }
+}
+</script>

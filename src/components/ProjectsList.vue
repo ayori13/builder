@@ -1,17 +1,16 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
-// если используешь роли — раскомментируй:
-// import { useAuth } from '@/composables/useAuth'
-// const { user } = useAuth()
+import { useAuth } from '@/composables/useAuth'
 
+const { user } = useAuth()
 const projects = ref([])
 
 // фильтры/поиск/сортировка
 const q = ref('')
 const fPriority = ref('')
-const fStatus = ref('') // 'done' | 'open' | ''
-const sortBy = ref('createdDesc') // createdDesc | deadlineAsc | deadlineDesc | titleAsc | titleDesc
+const fStatus = ref('')
+const sortBy = ref('createdDesc')
 
 onMounted(() => {
   const saved = localStorage.getItem('projects')
@@ -24,24 +23,21 @@ function norm(s) {
 
 const view = computed(() => {
   let arr = [...projects.value]
-
   const query = norm(q.value)
   if (query) arr = arr.filter(p => norm(p.title).includes(query))
-
   if (fPriority.value) arr = arr.filter(p => p.priority === fPriority.value)
-
   if (fStatus.value === 'done') arr = arr.filter(p => !!p.done)
   else if (fStatus.value === 'open') arr = arr.filter(p => !p.done)
 
   const byTitle = (a, b) => norm(a.title).localeCompare(norm(b.title))
   const byDeadline = (a, b) => (a.deadline || '').localeCompare(b.deadline || '')
-  const byCreatedDesc = (a, b) => Number(b.id) - Number(a.id) // если id = Date.now()
+  const byCreatedDesc = (a, b) => Number(b.id) - Number(a.id)
 
   switch (sortBy.value) {
     case 'titleAsc': arr.sort(byTitle); break
-    case 'titleDesc': arr.sort((a,b) => byTitle(b,a)); break
+    case 'titleDesc': arr.sort((a,b)=>byTitle(b,a)); break
     case 'deadlineAsc': arr.sort(byDeadline); break
-    case 'deadlineDesc': arr.sort((a,b) => byDeadline(b,a)); break
+    case 'deadlineDesc': arr.sort((a,b)=>byDeadline(b,a)); break
     default: arr.sort(byCreatedDesc)
   }
   return arr
@@ -61,20 +57,17 @@ function removeProject(id) {
     <!-- Панель фильтров -->
     <div class="card" style="padding:16px; margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap;">
       <input v-model="q" class="input" placeholder="Поиск по названию…" style="max-width:240px" />
-
       <select v-model="fPriority" class="select" style="max-width:180px">
         <option value="">Все приоритеты</option>
         <option>Высокий</option>
         <option>Средний</option>
         <option>Низкий</option>
       </select>
-
       <select v-model="fStatus" class="select" style="max-width:180px">
         <option value="">Все статусы</option>
         <option value="done">Выполнен</option>
         <option value="open">Не выполнен</option>
       </select>
-
       <select v-model="sortBy" class="select" style="max-width:200px">
         <option value="createdDesc">Сначала новые</option>
         <option value="deadlineAsc">Дедлайн ↑</option>
@@ -94,7 +87,7 @@ function removeProject(id) {
             <th>Дедлайн</th>
             <th>Приоритет</th>
             <th>Статус</th>
-            <th style="width:280px">Действия</th>
+            <th v-if="user.role !== 'director'" style="width:280px">Действия</th>
           </tr>
         </thead>
         <tbody>
@@ -103,29 +96,24 @@ function removeProject(id) {
             <td>{{ p.description || '—' }}</td>
             <td>{{ p.deadline || '—' }}</td>
             <td>
-              <span
-                class="badge"
+              <span class="badge"
                 :class="{
                   'badge--open': p.priority === 'Высокий',
                   'badge--progress': p.priority === 'Средний',
                   'badge--new': p.priority === 'Низкий'
                 }"
-              >
-                {{ p.priority }}
-              </span>
+              >{{ p.priority }}</span>
             </td>
             <td>
               <span class="badge" :class="p.done ? 'badge--done' : 'badge--open'">
                 {{ p.done ? 'Выполнен' : 'Не выполнен' }}
               </span>
             </td>
-            <td>
+            <td v-if="user.role !== 'director'">
               <div class="actions">
                 <RouterLink :to="`/projects/${p.id}`" class="btn btn--outline">Открыть</RouterLink>
-
-                <!-- если будешь включать роли — оберни ниже в v-if="user.role === 'admin'" -->
-                <RouterLink :to="`/projects/edit/${p.id}`" class="btn btn--outline">Редактировать</RouterLink>
-                <button @click="removeProject(p.id)" class="btn btn--danger">Удалить</button>
+                <RouterLink v-if="user.role !== 'director'" :to="`/projects/edit/${p.id}`" class="btn btn--outline">Редактировать</RouterLink>
+                <button v-if="user.role === 'manager'" @click="removeProject(p.id)" class="btn btn--danger">Удалить</button>
               </div>
             </td>
           </tr>
@@ -135,7 +123,7 @@ function removeProject(id) {
 
     <p v-else class="muted">Проектов пока нет</p>
 
-    <div class="mt-6">
+    <div v-if="user.role === 'engineer' || user.role === 'manager'" class="mt-6">
       <RouterLink to="/projects/add" class="btn btn--solid">Добавить новый проект</RouterLink>
     </div>
   </div>
