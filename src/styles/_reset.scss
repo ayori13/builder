@@ -1,0 +1,20 @@
+*{box-sizing:border-box}
+html,body,#app{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font); font-size:16px; line-height:1.5;
+}
+a{color:var(--brand); text-decoration:none}
+a:hover{text-decoration:underline}
+button{font:inherit}
+.container{max-width:1120px;margin:0 auto;padding:0 16px}
+.card{
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.h1{font-size:var(--h1); font-weight:800; letter-spacing:-0.02em}
+.h2{font-size:var(--h2); font-weight:700}
+.muted{color:var(--muted)}
+.sp-8{padding:32px}
+.mt-6{margin-top:24px}
+.mt-2{margin-top:8px}
