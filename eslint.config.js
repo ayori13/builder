@@ -16,6 +16,10 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.browser,
+        ...globals.node,
+        ...globals.vitest, // добавляем describe, it, expect, vi и т.д.
+        __dirname: true,   // разрешаем __dirname
+        __filename: true
       },
     },
   },

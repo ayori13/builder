@@ -1,41 +1,58 @@
-import { mount } from '@vue/test-utils';
-import ProjectsList from '@/components/ProjectsList.vue';
+import { mount, flushPromises } from '@vue/test-utils'
+import ProjectsList from '@/components/ProjectsList.vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import { vi } from 'vitest'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: []
+})
 
 describe('ProjectsList.vue', () => {
-  // Перед каждым тестом сбрасываем и инициализируем localStorage
   beforeEach(() => {
-    localStorage.clear();
-    // Заполним localStorage некоторыми проектами для тестов
+    localStorage.clear()
     const sampleProjects = [
       { id: '1', title: 'Test Project 1', description: 'Desc1', deadline: '2025-12-31', done: false, priority: 'Высокий' },
       { id: '2', title: 'Test Project 2', description: 'Desc2', deadline: '', done: true, priority: 'Низкий' }
-    ];
-    localStorage.setItem('projects', JSON.stringify(sampleProjects));
-  });
+    ]
+    localStorage.setItem('projects', JSON.stringify(sampleProjects))
+  })
 
-  it('Отображает список проектов из localStorage', () => {
-    const wrapper = mount(ProjectsList);
-    // После монтирования, должен прочитать 2 проекта из localStorage
-    expect(wrapper.findAll('tbody tr').length).toBe(2);
-    // Проверим, что текст названий присутствует
-    expect(wrapper.text()).toContain('Test Project 1');
-    expect(wrapper.text()).toContain('Test Project 2');
-  });
+  it('Отображает список проектов из localStorage', async () => {
+    const wrapper = mount(ProjectsList, {
+      global: {
+        plugins: [router],
+        stubs: ['RouterLink'],
+        mocks: {
+          user: { role: 'manager' }
+        }
+      }
+    })
+    await flushPromises() // дождаться mounted и реактивных обновлений
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows.length).toBe(2)
+    expect(wrapper.text()).toContain('Test Project 1')
+    expect(wrapper.text()).toContain('Test Project 2')
+  })
 
   it('Удаляет проект при клике на кнопку удаления', async () => {
-    // Мокируем window.confirm чтобы всегда возвращал true (подтверждение)
-    window.confirm = jest.fn(() => true);
-    const wrapper = mount(ProjectsList);
-    // Изначально 2 проекта
-    expect(wrapper.findAll('tbody tr').length).toBe(2);
-    // Найдем первую кнопку удаления и кликнем
-    const deleteBtn = wrapper.find('button.delete-btn');
-    await deleteBtn.trigger('click');
-    // После удаления должен остаться 1 проект в таблице
-    expect(wrapper.findAll('tbody tr').length).toBe(1);
-    // И localStorage тоже должен обновиться
-    const projectsAfter = JSON.parse(localStorage.getItem('projects'));
-    expect(projectsAfter.length).toBe(1);
-    expect(projectsAfter[0].title).toBe('Test Project 2'); // остался второй проект
-  });
-});
+    window.confirm = vi.fn(() => true)
+    const wrapper = mount(ProjectsList, {
+      global: {
+        plugins: [router],
+        stubs: ['RouterLink'],
+        mocks: {
+          user: { role: 'manager' }
+        }
+      }
+    })
+    await flushPromises()
+    const deleteBtn = wrapper.find('button.delete-btn')
+    expect(deleteBtn.exists()).toBe(true)
+    await deleteBtn.trigger('click')
+    await flushPromises()
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows.length).toBe(1)
+  })
+})

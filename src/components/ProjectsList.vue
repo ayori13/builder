@@ -113,7 +113,14 @@ function removeProject(id) {
               <div class="actions">
                 <RouterLink :to="`/projects/${p.id}`" class="btn btn--outline">Открыть</RouterLink>
                 <RouterLink v-if="user.role !== 'director'" :to="`/projects/edit/${p.id}`" class="btn btn--outline">Редактировать</RouterLink>
-                <button v-if="user.role === 'manager'" @click="removeProject(p.id)" class="btn btn--danger">Удалить</button>
+                <button
+  v-if="user.role === 'manager'"
+  @click="removeProject(p.id)"
+  class="btn btn--danger delete-btn"
+>
+  Удалить
+</button>
+
               </div>
             </td>
           </tr>
