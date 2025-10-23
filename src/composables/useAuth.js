@@ -3,23 +3,22 @@ import { useRouter } from 'vue-router'
 
 const user = ref(JSON.parse(localStorage.getItem('user')) || null)
 
+// Демо-пользователи (для назначения исполнителя и логина)
+const USERS = [
+  { email: 'engineer@example.com', role: 'engineer', name: 'Инженер Иванов', password: '1234' },
+  { email: 'manager@example.com', role: 'manager', name: 'Менеджер Петров', password: '1234' },
+  { email: 'director@example.com', role: 'director', name: 'Руководитель Сидоров', password: '1234' }
+]
+
 export function useAuth() {
   const router = useRouter()
 
   function login(email, password) {
-    // Простейшая авторизация
-    const accounts = {
-      'engineer@example.com': { role: 'engineer', password: '1234' },
-      'manager@example.com': { role: 'manager', password: '1234' },
-      'director@example.com': { role: 'director', password: '1234' }
-    }
-
-    const acc = accounts[email]
+    const acc = USERS.find(u => u.email === email)
     if (!acc || acc.password !== password) {
       return { success: false, message: 'Неверный логин или пароль' }
     }
-
-    user.value = { email, role: acc.role }
+    user.value = { email: acc.email, role: acc.role, name: acc.name }
     localStorage.setItem('user', JSON.stringify(user.value))
     return { success: true }
   }
@@ -30,5 +29,9 @@ export function useAuth() {
     router.push('/login')
   }
 
-  return { user, login, logout }
+  function engineers() {
+    return USERS.filter(u => u.role === 'engineer')
+  }
+
+  return { user, login, logout, engineers }
 }

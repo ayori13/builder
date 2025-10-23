@@ -1,25 +1,51 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { useProjects } from '@/composables/useProjects'
+
+const router = useRouter()
+const { user, engineers } = useAuth()
+const { add, STATUSES } = useProjects()
+
+const form = ref({
+  title: '',
+  description: '',
+  deadline: '',
+  priority: 'Средний',
+  assignee: '',
+  status: 'Новая'
+})
+
+function handleSubmit() {
+  // директору форма не показывается (read-only) — см. шаблон
+  add(form.value)
+  router.push('/projects')
+}
+</script>
+
 <template>
   <div class="container sp-8">
-    <h2 class="h2">Добавить проект</h2>
+    <h2 class="h2 mb-4">Создать проект</h2>
 
-    <form @submit.prevent="handleSubmit" class="project-form mt-6">
+    <form class="project-form" @submit.prevent="handleSubmit">
       <div class="form-field">
-        <label for="title">Название проекта:</label>
-        <input id="title" v-model="form.title" type="text" required class="input" />
+        <label for="title">Название</label>
+        <input id="title" v-model="form.title" class="input" type="text" required />
       </div>
 
       <div class="form-field">
-        <label for="description">Описание:</label>
-        <textarea id="description" v-model="form.description" rows="3" class="textarea"></textarea>
+        <label for="description">Описание</label>
+        <textarea id="description" v-model="form.description" class="input" rows="3"></textarea>
       </div>
 
       <div class="form-field">
-        <label for="deadline">Дедлайн:</label>
-        <input id="deadline" v-model="form.deadline" type="date" class="input" />
+        <label for="deadline">Дедлайн</label>
+        <input id="deadline" v-model="form.deadline" class="input" type="date" />
       </div>
 
       <div class="form-field">
-        <label for="priority">Приоритет:</label>
+        <label for="priority">Приоритет</label>
         <select id="priority" v-model="form.priority" class="select">
           <option>Высокий</option>
           <option>Средний</option>
@@ -27,39 +53,34 @@
         </select>
       </div>
 
-      <button type="submit" class="btn btn--solid">Создать проект</button>
-      <RouterLink to="/projects" class="btn btn--outline" style="margin-left: 8px;">Отмена</RouterLink>
+      <!-- Исполнитель: менеджер может назначить сразу -->
+      <div class="form-field" v-if="user?.role === 'manager'">
+        <label for="assignee">Исполнитель</label>
+        <select id="assignee" v-model="form.assignee" class="select">
+          <option value="">— не назначен —</option>
+          <option v-for="e in engineers()" :key="e.email" :value="e.email">
+            {{ e.name }} ({{ e.email }})
+          </option>
+        </select>
+      </div>
+
+      <!-- Статус: менеджер может выбрать стартовый -->
+      <div class="form-field" v-if="user?.role === 'manager'">
+        <label for="status">Статус</label>
+        <select id="status" v-model="form.status" class="select">
+          <option v-for="s in STATUSES" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="row" style="gap:8px">
+        <button v-if="user?.role !== 'director'" type="submit" class="btn btn--solid">Создать</button>
+        <RouterLink to="/projects" class="btn btn--outline">Отмена</RouterLink>
+      </div>
     </form>
   </div>
 </template>
 
-<script setup>
-import { reactive } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-
-const router = useRouter()
-const form = reactive({
-  title: '',
-  description: '',
-  deadline: '',
-  priority: 'Средний',
-  done: false
-})
-
-function handleSubmit() {
-  const saved = localStorage.getItem('projects')
-  const projects = saved ? JSON.parse(saved) : []
-  projects.push({
-    id: Date.now().toString(),
-    ...form
-  })
-  localStorage.setItem('projects', JSON.stringify(projects))
-  router.push('/projects')
-}
-</script>
-
 <style scoped>
-.project-form { max-width: 480px; }
-.form-field { margin-bottom: 1rem; }
-.form-field label { display: block; margin-bottom: 0.3rem; font-weight: 600; }
+.project-form { max-width: 560px }
+.form-field { margin-bottom: 12px }
 </style>

@@ -1,114 +1,119 @@
-<template>
-  <div class="container sp-8">
-    <h2 class="h2">Редактировать проект</h2>
-
-    <div v-if="loaded" class="mt-6">
-      <form @submit.prevent="handleSubmit" class="project-form">
-        <div class="form-field">
-          <label for="title">Название:</label>
-          <input id="title" v-model="form.title" type="text" required class="input" />
-        </div>
-
-        <div class="form-field">
-          <label for="description">Описание:</label>
-          <textarea id="description" v-model="form.description" rows="3" class="textarea"></textarea>
-        </div>
-
-        <div class="form-field">
-          <label for="deadline">Дедлайн:</label>
-          <input id="deadline" v-model="form.deadline" type="date" class="input" />
-        </div>
-
-        <div class="form-field">
-          <label>
-            <input type="checkbox" v-model="form.done" />
-            Выполнен
-          </label>
-        </div>
-
-        <div class="form-field">
-          <label for="priority">Приоритет:</label>
-          <select id="priority" v-model="form.priority" class="select">
-            <option>Высокий</option>
-            <option>Средний</option>
-            <option>Низкий</option>
-          </select>
-        </div>
-
-        <button type="submit" class="btn btn--solid">Сохранить изменения</button>
-        <RouterLink to="/projects" class="btn btn--outline" style="margin-left: 8px;">Отмена</RouterLink>
-      </form>
-    </div>
-
-    <div v-else>
-      <p class="muted">Загрузка…</p>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { useProjects } from '@/composables/useProjects'
 
 const route = useRoute()
 const router = useRouter()
+const { user, engineers } = useAuth()
+const { byId, update, STATUSES, setStatus, canSetStatus } = useProjects()
 
-const form = reactive({
-  title: '',
-  description: '',
-  deadline: '',
-  done: false,
-  priority: 'Средний'
-})
-
-// Флаг загрузки — именно ref, иначе не сработает реактивность
-const loaded = ref(false)
+const form = ref(null)
+const error = ref('')
 
 onMounted(() => {
-  const projectId = String(route.params.id ?? '')
-  const saved = localStorage.getItem('projects')
-  const projects = saved ? JSON.parse(saved) : []
-  const existing = projects.find(p => String(p.id) === projectId)
-
-  if (!existing) {
-    alert('Проект не найден')
-    router.push('/projects')
-    return
-  }
-
-  form.title = existing.title ?? ''
-  form.description = existing.description ?? ''
-  form.deadline = existing.deadline ?? ''
-  form.done = !!existing.done
-  form.priority = existing.priority || 'Средний'
-
-  loaded.value = true
+  const item = byId(route.params.id)
+  if (!item) { error.value = 'Проект не найден'; return }
+  form.value = { ...item }
 })
 
-function handleSubmit() {
-  const projectId = String(route.params.id ?? '')
-  const saved = localStorage.getItem('projects')
-  const projects = saved ? JSON.parse(saved) : []
-
-  const index = projects.findIndex(p => String(p.id) === projectId)
-  if (index !== -1) {
-    projects[index] = {
-      ...projects[index],
-      title: form.title,
-      description: form.description,
-      deadline: form.deadline,
-      done: form.done,
-      priority: form.priority
+function save() {
+  if (!form.value) return
+  if (user.value?.role === 'manager') {
+    update(form.value.id, {
+      title: form.value.title,
+      description: form.value.description,
+      deadline: form.value.deadline,
+      priority: form.value.priority,
+      assignee: form.value.assignee,
+      status: form.value.status
+    })
+  } else if (user.value?.role === 'engineer') {
+    const current = byId(form.value.id)
+    if (canSetStatus(current.status, form.value.status)) {
+      setStatus(form.value.id, form.value.status)
+      update(form.value.id, {
+        title: form.value.title,
+        description: form.value.description,
+        deadline: form.value.deadline,
+        priority: form.value.priority
+      })
+    } else {
+      alert('Недопустимый переход статуса')
+      return
     }
-    localStorage.setItem('projects', JSON.stringify(projects))
   }
-
   router.push('/projects')
 }
 </script>
 
+<template>
+  <div class="container sp-8">
+    <h2 class="h2 mb-4">Редактировать проект</h2>
+
+    <p v-if="error" class="muted" style="color:var(--danger)">{{ error }}</p>
+    <form v-else-if="form" class="project-form" @submit.prevent="save">
+      <div class="form-field">
+        <label for="title">Название</label>
+        <input id="title" v-model="form.title" class="input" type="text" required />
+      </div>
+
+      <div class="form-field">
+        <label for="description">Описание</label>
+        <textarea id="description" v-model="form.description" class="input" rows="3"></textarea>
+      </div>
+
+      <div class="form-field">
+        <label for="deadline">Дедлайн</label>
+        <input id="deadline" v-model="form.deadline" class="input" type="date" />
+      </div>
+
+      <div class="form-field">
+        <label for="priority">Приоритет</label>
+        <select id="priority" v-model="form.priority" class="select">
+          <option>Высокий</option>
+          <option>Средний</option>
+          <option>Низкий</option>
+        </select>
+      </div>
+
+      <!-- Исполнитель -->
+      <div class="form-field">
+        <label for="assignee">Исполнитель</label>
+        <template v-if="user?.role === 'manager'">
+          <select id="assignee" v-model="form.assignee" class="select">
+            <option value="">— не назначен —</option>
+            <option v-for="e in engineers()" :key="e.email" :value="e.email">
+              {{ e.name }} ({{ e.email }})
+            </option>
+          </select>
+        </template>
+        <template v-else>
+          <input class="input" :value="form.assignee || '—'" disabled />
+        </template>
+      </div>
+
+      <!-- Статус -->
+      <div class="form-field">
+        <label for="status">Статус</label>
+        <select id="status" v-model="form.status" class="select">
+          <option v-for="s in STATUSES" :key="s" :value="s">{{ s }}</option>
+        </select>
+        <p class="muted" style="margin-top:6px">
+          Допустимые переходы: Новая → В работе → На проверке → Закрыта / Отменена
+        </p>
+      </div>
+
+      <div class="row" style="gap:8px">
+        <button type="submit" class="btn btn--solid">Сохранить</button>
+        <RouterLink to="/projects" class="btn btn--outline">Отмена</RouterLink>
+      </div>
+    </form>
+  </div>
+</template>
+
 <style scoped>
-.project-form { max-width: 480px; }
-.form-field { margin-bottom: 1rem; }
-.form-field label { display: block; margin-bottom: 0.3rem; font-weight: 600; }
+.project-form { max-width: 560px }
+.form-field { margin-bottom: 12px }
 </style>
