@@ -1,29 +1,17 @@
-import express from 'express'
-import cors from 'cors'
-import proxy from 'express-http-proxy'
-import { v4 as uuid } from 'uuid'
+import express from "express"
+import cors from "cors"
+import router from "./routes.js"
 
 const app = express()
-app.use(express.json())
 app.use(cors())
+app.use(express.json())
 
-// X-Request-ID middleware
-app.use((req, res, next) => {
-  req.headers['x-request-id'] = uuid()
-  next()
+app.use("/api", router)
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" })
 })
 
-// Proxy to services
-const USERS_URL = process.env.USERS_URL || 'http://localhost:3001'
-const ORDERS_URL = process.env.ORDERS_URL || 'http://localhost:3002'
+app.listen(4000, () => console.log("Gateway running on :4000"))
 
-app.use('/v1/users', proxy(USERS_URL))
-app.use('/v1/orders', proxy(ORDERS_URL))
-
-// Export app for tests
 export default app
-
-// Start server IF not running under tests
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(8080, () => console.log('API Gateway running on 8080'))
-}
