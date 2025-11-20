@@ -1,86 +1,130 @@
-<script setup>
-import { ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
-import { useProjects } from '@/composables/useProjects'
-
-const router = useRouter()
-const { user, engineers } = useAuth()
-const { add, STATUSES } = useProjects()
-
-const form = ref({
-  title: '',
-  description: '',
-  deadline: '',
-  priority: 'Средний',
-  assignee: '',
-  status: 'Новая'
-})
-
-function handleSubmit() {
-  // директору форма не показывается (read-only) — см. шаблон
-  add(form.value)
-  router.push('/projects')
-}
-</script>
-
 <template>
   <div class="container sp-8">
-    <h2 class="h2 mb-4">Создать проект</h2>
+    <h2 class="h2 mb-2">Добавить дефект / проект</h2>
+    <p class="muted mb-4">
+      Создание новой записи с приоритетом, сроком и ответственным.
+    </p>
 
-    <form class="project-form" @submit.prevent="handleSubmit">
+    <form class="card" style="padding:24px;" @submit.prevent="handleSubmit">
       <div class="form-field">
-        <label for="title">Название</label>
-        <input id="title" v-model="form.title" class="input" type="text" required />
+        <label class="label" for="title">Название</label>
+        <input
+          id="title"
+          v-model="title"
+          class="input"
+          required
+          placeholder="Например, Трещина в стене"
+        />
       </div>
 
       <div class="form-field">
-        <label for="description">Описание</label>
-        <textarea id="description" v-model="form.description" class="input" rows="3"></textarea>
+        <label class="label" for="description">Описание</label>
+        <textarea
+          id="description"
+          v-model="description"
+          class="textarea"
+          placeholder="Кратко опишите проблему"
+        />
       </div>
 
       <div class="form-field">
-        <label for="deadline">Дедлайн</label>
-        <input id="deadline" v-model="form.deadline" class="input" type="date" />
+        <label class="label" for="deadline">Дедлайн</label>
+        <input
+          id="deadline"
+          v-model="deadline"
+          type="date"
+          class="input"
+        />
       </div>
 
       <div class="form-field">
-        <label for="priority">Приоритет</label>
-        <select id="priority" v-model="form.priority" class="select">
-          <option>Высокий</option>
-          <option>Средний</option>
-          <option>Низкий</option>
+        <label class="label" for="priority">Приоритет</label>
+        <select id="priority" v-model="priority" class="input">
+          <option value="high">Высокий</option>
+          <option value="medium">Средний</option>
+          <option value="low">Низкий</option>
         </select>
       </div>
 
-      <!-- Исполнитель: менеджер может назначить сразу -->
-      <div class="form-field" v-if="user?.role === 'manager'">
-        <label for="assignee">Исполнитель</label>
-        <select id="assignee" v-model="form.assignee" class="select">
-          <option value="">— не назначен —</option>
-          <option v-for="e in engineers()" :key="e.email" :value="e.email">
-            {{ e.name }} ({{ e.email }})
-          </option>
-        </select>
+      <div class="form-field">
+        <label class="label" for="assignee">Ответственный</label>
+        <input
+          id="assignee"
+          v-model="assignee"
+          class="input"
+          :placeholder="assigneePlaceholder"
+        />
+        <p class="muted" style="font-size:12px; margin-top:4px;">
+          Инженер обычно указывает себя, менеджер — назначает исполнителя.
+        </p>
       </div>
 
-      <!-- Статус: менеджер может выбрать стартовый -->
-      <div class="form-field" v-if="user?.role === 'manager'">
-        <label for="status">Статус</label>
-        <select id="status" v-model="form.status" class="select">
-          <option v-for="s in STATUSES" :key="s" :value="s">{{ s }}</option>
-        </select>
+      <div class="form-field">
+        <span class="label">Статус по умолчанию</span>
+        <span class="badge badge--new">Новый</span>
       </div>
 
-      <div class="row" style="gap:8px">
-        <button v-if="user?.role !== 'director'" type="submit" class="btn btn--solid">Создать</button>
-        <RouterLink to="/projects" class="btn btn--outline">Отмена</RouterLink>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button type="submit" class="btn btn--solid">
+          Создать
+        </button>
+        <button
+          type="button"
+          class="btn btn--outline"
+          @click="router.push('/projects')"
+        >
+          Отмена
+        </button>
       </div>
     </form>
   </div>
 </template>
 
-<style scoped>
-.project-form { max-width: 560px }
-.form-field { margin-bottom: 12px }
-</style>
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+
+const router = useRouter()
+const { user } = useAuth()
+
+const title = ref('')
+const description = ref('')
+const deadline = ref('')
+const priority = ref('medium')
+const assignee = ref('')
+
+const assigneePlaceholder = computed(() => {
+  if (user.value?.role === 'manager') return 'Укажите инженера / исполнителя'
+  if (user.value?.role === 'engineer') return 'Например, ваша фамилия или email'
+  return 'Ответственный за задачу'
+})
+
+function handleSubmit() {
+  if (!title.value.trim()) return
+
+  const now = new Date().toISOString()
+  const currentUser = user.value || {}
+
+  const projects = JSON.parse(localStorage.getItem('projects') || '[]')
+
+  const project = {
+    id: Date.now().toString(),
+    title: title.value.trim(),
+    description: description.value.trim(),
+    deadline: deadline.value || '',
+    priority: priority.value,
+    done: false,
+    status: 'new',
+    assignee: assignee.value.trim() || currentUser.name || currentUser.email || '',
+    authorRole: currentUser.role || 'unknown',
+    createdAt: now,
+    updatedAt: now
+  }
+
+  projects.push(project)
+  localStorage.setItem('projects', JSON.stringify(projects))
+
+  router.push('/projects')
+}
+</script>

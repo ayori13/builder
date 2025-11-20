@@ -1,131 +1,84 @@
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Pie, Bar } from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  BarElement,
-  CategoryScale,
-  LinearScale
-} from 'chart.js'
-import { useProjects } from '@/composables/useProjects'
-
-ChartJS.register(Title, Tooltip, Legend, ArcElement, BarElement, CategoryScale, LinearScale)
-
-const { exportCSV, exportExcel } = useProjects()
-
-const projects = ref([])
-
-onMounted(() => {
-  loadProjects()
-  window.addEventListener('storage', loadProjects)
-})
-
-function loadProjects() {
-  const saved = localStorage.getItem('projects')
-  projects.value = saved ? JSON.parse(saved) : []
-}
-
-const stats = computed(() => {
-  const today = new Date().toISOString().split('T')[0]
-  const total = projects.value.length
-  const done = projects.value.filter(p => p.status === 'Закрыта').length
-  const open = projects.value.filter(p => p.status !== 'Закрыта' && p.status !== 'Отменена').length
-  const overdue = projects.value.filter(
-    p => (p.status !== 'Закрыта' && p.status !== 'Отменена') && p.deadline && p.deadline < today
-  ).length
-  return { total, done, open, overdue }
-})
-
-// Pie: статус
-const pieData = computed(() => ({
-  labels: ['Закрыта', 'Открытые', 'Просрочено'],
-  datasets: [
-    {
-      backgroundColor: ['#22c55e', '#facc15', '#ef4444'],
-      data: [stats.value.done, stats.value.open, stats.value.overdue],
-      borderWidth: 0
-    }
-  ]
-}))
-const pieOptions = {
-  responsive: true,
-  plugins: {
-    legend: { position: 'bottom', labels: { color: 'var(--text)', font: { size: 14 } } },
-    title: { display: true, text: 'Статус проектов', color: 'var(--text)', font: { size: 18, weight: 'bold' } }
-  }
-}
-
-// Bar: приоритеты
-const barData = computed(() => {
-  const count = { Высокий: 0, Средний: 0, Низкий: 0 }
-  projects.value.forEach(p => { if (count[p.priority] != null) count[p.priority]++ })
-  return {
-    labels: Object.keys(count),
-    datasets: [{ label: 'Количество проектов', data: Object.values(count), backgroundColor: ['#f87171','#facc15','#60a5fa'] }]
-  }
-})
-const barOptions = {
-  responsive: true,
-  plugins: {
-    legend: { display: false },
-    title: { display: true, text: 'Проекты по приоритетам', color: 'var(--text)', font: { size: 18, weight: 'bold' } }
-  },
-  scales: {
-    x: { ticks: { color: 'var(--text)' }, grid: { color: 'var(--border)' } },
-    y: { ticks: { color: 'var(--text)' }, grid: { color: 'var(--border)' }, beginAtZero: true }
-  }
-}
-</script>
-
 <template>
   <div class="container sp-8">
-    <h2 class="h2 mb-4">Отчёты по проектам</h2>
+    <h2 class="h2 mb-4">Отчётность</h2>
 
-    <div v-if="stats.total">
-      <div class="row" style="gap:8px; margin-bottom:12px;">
-        <button class="btn btn--outline" @click="exportCSV">Экспорт CSV</button>
-        <button class="btn btn--solid" @click="exportExcel">Экспорт Excel</button>
+    <div class="card card--surface p-4">
+
+      <div class="filters-row">
+        <div class="filters-item">
+          <label>Статус</label>
+          <select v-model="status" class="input">
+            <option value="all">Все</option>
+            <option value="created">Новые</option>
+            <option value="in_progress">В работе</option>
+            <option value="checking">На проверке</option>
+            <option value="done">Завершённые</option>
+            <option value="cancelled">Отменённые</option>
+          </select>
+        </div>
+
+        <div class="filters-item">
+          <label>Приоритет</label>
+          <select v-model="priority" class="input">
+            <option value="all">Все</option>
+            <option value="high">Высокий</option>
+            <option value="medium">Средний</option>
+            <option value="low">Низкий</option>
+          </select>
+        </div>
       </div>
 
-      <div class="grid">
-        <div class="card" style="padding:20px;">
-          <h3 class="h2 mb-2">Сводка</h3>
-          <ul style="list-style:none;padding:0;margin:0;font-size:16px;">
-            <li><strong>Всего проектов:</strong> {{ stats.total }}</li>
-            <li><strong>Закрыто:</strong> {{ stats.done }}</li>
-            <li><strong>Открыто:</strong> {{ stats.open }}</li>
-            <li><strong>Просрочено:</strong> {{ stats.overdue }}</li>
-          </ul>
-        </div>
+      <div class="mt-6">
+        <h3 class="h3 mb-2">Всего записей: {{ filtered.length }}</h3>
 
-        <div class="card chart-card">
-          <Pie :data="pieData" :options="pieOptions" />
-        </div>
-
-        <div class="card chart-card">
-          <Bar :data="barData" :options="barOptions" />
-        </div>
+        <ul class="mt-4">
+          <li v-for="p in filtered" :key="p.id" class="mb-1">
+            <strong>{{ p.items?.[0]?.title }}</strong> — {{ statusLabel(p.status) }}
+          </li>
+        </ul>
       </div>
     </div>
-
-    <p v-else class="muted">Нет данных для отчёта</p>
   </div>
 </template>
 
-<style scoped>
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 24px;
+<script setup>
+import { ref, computed, onMounted } from "vue"
+
+const orders = ref([])
+const status = ref("all")
+const priority = ref("all")
+
+const token = localStorage.getItem("auth_token")
+
+async function loadOrders() {
+  const res = await fetch("/api/v1/orders", {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  const data = await res.json()
+  if (data.success) orders.value = data.data
 }
-.chart-card {
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-</style>
+
+onMounted(loadOrders)
+
+const filtered = computed(() => {
+  let list = [...orders.value]
+
+  if (status.value !== "all") {
+    list = list.filter(o => o.status === status.value)
+  }
+
+  if (priority.value !== "all") {
+    list = list.filter(o => o.items?.[0]?.priority === priority.value)
+  }
+
+  return list
+})
+
+const statusLabel = s => ({
+  created: "Новый",
+  in_progress: "В работе",
+  checking: "На проверке",
+  done: "Завершён",
+  cancelled: "Отменён"
+}[s] || "—")
+</script>

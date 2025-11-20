@@ -2,7 +2,6 @@ import express from "express"
 
 const router = express.Router()
 
-// Временная база
 const orders = []
 
 // СОЗДАТЬ ДЕФЕКТ

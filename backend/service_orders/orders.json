@@ -1,0 +1,30 @@
+[
+  {
+    "id": "266b41b5-b4d1-4625-934e-6c4c99b0a3af",
+    "userId": "833d4301-9d7e-4d4d-a2c8-95c8259234f6",
+    "items": [
+      {
+        "name": "Трубы",
+        "qty": 5
+      }
+    ],
+    "total": 1000,
+    "status": "cancelled",
+    "createdAt": "2025-11-19T21:32:48.491Z",
+    "updatedAt": "2025-11-19T21:32:48.514Z"
+  },
+  {
+    "id": "2c0758c5-fdc4-48ed-a03a-7ff5b7037f06",
+    "userId": "639367c3-55a4-4963-be49-ce8750c459b5",
+    "items": [
+      {
+        "name": "Трубы",
+        "qty": 5
+      }
+    ],
+    "total": 1000,
+    "status": "cancelled",
+    "createdAt": "2025-11-19T21:37:25.729Z",
+    "updatedAt": "2025-11-19T21:37:25.751Z"
+  }
+]

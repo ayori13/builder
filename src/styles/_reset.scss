@@ -22,8 +22,6 @@ button{font:inherit}
 .mt-6{margin-top:24px}
 .mb-4{margin-bottom: 1rem}
 
-/* утилита-ряд для действий */
 .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 
-/* на узких экранах таблица скроллится по оси X */
 .table-wrap{overflow:auto; border-radius:14px; border:1px solid var(--border)}

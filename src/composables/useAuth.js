@@ -1,37 +1,64 @@
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+// src/composables/useAuth.js
+import { ref } from "vue"
 
-const user = ref(JSON.parse(localStorage.getItem('user')) || null)
+export const currentUser = ref(null)
 
-// Демо-пользователи (для назначения исполнителя и логина)
-const USERS = [
-  { email: 'engineer@example.com', role: 'engineer', name: 'Инженер Иванов', password: '1234' },
-  { email: 'manager@example.com', role: 'manager', name: 'Менеджер Петров', password: '1234' },
-  { email: 'director@example.com', role: 'director', name: 'Руководитель Сидоров', password: '1234' }
-]
+const TOKEN_KEY = "auth_token"
+const USER_KEY = "auth_user"
 
-export function useAuth() {
-  const router = useRouter()
+// восстанавливаем состояние при загрузке приложения
+export function initAuthFromStorage() {
+  const token = localStorage.getItem(TOKEN_KEY)
+  const rawUser = localStorage.getItem(USER_KEY)
 
-  function login(email, password) {
-    const acc = USERS.find(u => u.email === email)
-    if (!acc || acc.password !== password) {
-      return { success: false, message: 'Неверный логин или пароль' }
+  if (token && rawUser) {
+    try {
+      currentUser.value = JSON.parse(rawUser)
+    } catch {
+      currentUser.value = null
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_KEY)
     }
-    user.value = { email: acc.email, role: acc.role, name: acc.name }
-    localStorage.setItem('user', JSON.stringify(user.value))
+  }
+}
+
+export function getAuthHeader() {
+  const token = localStorage.getItem(TOKEN_KEY)
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+// вход через backend /api/v1/users/login
+export async function login(email, password) {
+  try {
+    const res = await fetch("/api/v1/users/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    })
+
+    const data = await res.json()
+
+    if (!data.success) {
+      return {
+        success: false,
+        message: data.error || "Неверный логин или пароль"
+      }
+    }
+
+    const { token, user } = data.data
+
+    localStorage.setItem(TOKEN_KEY, token)
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    currentUser.value = user
+
     return { success: true }
+  } catch {
+    return { success: false, message: "Сервер недоступен, попробуйте позже" }
   }
+}
 
-  function logout() {
-    user.value = null
-    localStorage.removeItem('user')
-    router.push('/login')
-  }
-
-  function engineers() {
-    return USERS.filter(u => u.role === 'engineer')
-  }
-
-  return { user, login, logout, engineers }
+export function logout() {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+  currentUser.value = null
 }

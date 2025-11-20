@@ -1,16 +1,18 @@
 {
     "name": "api_gateway",
     "version": "1.0.0",
-    "type": "module",
+    "type": "commonjs",
     "main": "index.js",
     "scripts": {
-      "start": "node index.js"
+        "start": "node index.js"
     },
     "dependencies": {
-      "cors": "^2.8.5",
-      "express": "^4.18.2",
-      "express-http-proxy": "^1.6.3",
-      "uuid": "^9.0.1"
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^4.18.2",
+        "express-http-proxy": "^1.6.3",
+        "express-rate-limit": "^8.2.1",
+        "pino": "^10.1.0",
+        "pino-http": "^11.0.0"
     }
-  }
-  
+}

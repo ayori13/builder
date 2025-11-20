@@ -1,0 +1,19 @@
+{
+    "name": "project-backend",
+    "version": "1.0.0",
+    "type": "commonjs",
+    "scripts": {
+        "test": "jest --runInBand",
+        "test:watch": "jest --watch"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "supertest": "^6.3.3"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "pino": "^10.1.0",
+        "pino-http": "^11.0.0",
+        "uuid": "^13.0.0"
+    }
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "9e08a182-ceda-4d97-9ac9-bebec6510e4e",
+    "email": "test_1763587967539@example.com",
+    "password": "secret123",
+    "name": "Tester",
+    "roles": [
+      "engineer"
+    ],
+    "createdAt": "2025-11-19T21:32:47.577Z",
+    "updatedAt": "2025-11-19T21:32:47.577Z"
+  },
+  {
+    "id": "833d4301-9d7e-4d4d-a2c8-95c8259234f6",
+    "email": "order_user_1763587968454@example.com",
+    "password": "secret123",
+    "name": "Order User",
+    "roles": [
+      "engineer"
+    ],
+    "createdAt": "2025-11-19T21:32:48.464Z",
+    "updatedAt": "2025-11-19T21:32:48.464Z"
+  },
+  {
+    "id": "8a5e0f4c-e1e3-4225-aa23-78746f1b57ec",
+    "email": "test_1763588245067@example.com",
+    "password": "secret123",
+    "name": "Tester",
+    "roles": [
+      "engineer"
+    ],
+    "createdAt": "2025-11-19T21:37:25.108Z",
+    "updatedAt": "2025-11-19T21:37:25.108Z"
+  },
+  {
+    "id": "639367c3-55a4-4963-be49-ce8750c459b5",
+    "email": "order_user_1763588245694@example.com",
+    "password": "secret123",
+    "name": "Order User",
+    "roles": [
+      "engineer"
+    ],
+    "createdAt": "2025-11-19T21:37:25.703Z",
+    "updatedAt": "2025-11-19T21:37:25.703Z"
+  }
+]

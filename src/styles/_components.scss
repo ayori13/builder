@@ -38,3 +38,140 @@
 .badge--progress{background:#fef3c7;color:#92400e}
 .badge--review{background:#dbeafe;color:#1e3a8a}
 .badge--done{background:#dcfce7;color:#065f46}
+
+.text-ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Для таблиц */
+.table td {
+  vertical-align: middle;
+  max-width: 220px;
+}
+
+.table td.text-wrap {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Чтобы всё не разъезжалось на маленьких экранах */
+.table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Более аккуратные бейджи */
+.badge {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* Кнопки XS не должны ломать верстку */
+.btn--xs {
+  padding: 2px 6px !important;
+  font-size: 0.75rem;
+}
+
+/* Текст в таблице не вываливается */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* Описание длинных дефектов */
+.table .desc-cell {
+  max-width: 350px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Карточка с фильтрами */
+.filters {
+  width: 100%;
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+/* Ряд фильтров: сетка */
+.filters-row {
+  display: grid;
+  gap: 16px;
+
+  /* 4 колонки на широком экране,
+     2 колонки — на планшете,
+     1 колонка — на мобильном */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* Элемент фильтра */
+.filters-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Лейбл */
+.filters-item .label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted, #555);
+
+  /* важное: перенос слов */
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Поля */
+.filters-item .input {
+  width: 100%;
+}
+
+/* Внутренняя тень карточки */
+.card--surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* Глобальная форма */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* Сетка полей */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Блок input */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Лейбл */
+.form-label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+/* Кнопки */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}

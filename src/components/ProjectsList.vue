@@ -1,154 +1,232 @@
-<script setup>
-import { computed, ref } from 'vue'
-import { useAuth } from '@/composables/useAuth'
-import { useProjects } from '@/composables/useProjects'
-import { RouterLink } from 'vue-router'
-
-const { user, engineers } = useAuth()
-const { all, remove, setStatus, STATUSES, assign } = useProjects()
-
-const projects = all()
-
-// Фильтры
-const q = ref('')
-const statusFilter = ref('Все')
-const priorityFilter = ref('Все')
-
-const filtered = computed(() => {
-  const search = q.value.trim().toLowerCase()
-  return projects.value.filter(p => {
-    const okSearch = !search || p.title.toLowerCase().includes(search) || p.description.toLowerCase().includes(search)
-    const okStatus = statusFilter.value === 'Все' || p.status === statusFilter.value
-    const okPriority = priorityFilter.value === 'Все' || p.priority === priorityFilter.value
-    return okSearch && okStatus && okPriority
-  })
-})
-
-function confirmRemove(id) {
-  if (confirm('Удалить проект?')) remove(id)
-}
-
-function quickAssign(p, email) {
-  if (user.value?.role !== 'manager') return
-  assign(p.id, email)
-}
-
-function quickSetStatus(p, to) {
-  const ok = setStatus(p.id, to)
-  if (!ok) alert('Недопустимый переход статуса')
-}
-</script>
-
 <template>
   <div class="container sp-8">
-    <h2 class="h2 mb-4">Проекты</h2>
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="h2">Список дефектов / проектов</h2>
 
-    <!-- Панель фильтров -->
-    <div class="card" style="padding:12px; display:flex; gap:8px; flex-wrap:wrap;">
-      <input class="input" v-model="q" placeholder="Поиск по названию..." style="min-width:240px" />
+      <div class="flex gap-2">
+        <button class="btn btn--outline" @click="exportCSV">Экспорт в CSV</button>
 
-      <select class="select" v-model="statusFilter">
-        <option>Все</option>
-        <option v-for="s in ['Новая','В работе','На проверке','Закрыта','Отменена']" :key="s">{{ s }}</option>
-      </select>
-
-      <select class="select" v-model="priorityFilter">
-        <option>Все</option>
-        <option>Высокий</option>
-        <option>Средний</option>
-        <option>Низкий</option>
-      </select>
-
-      <div style="flex:1"></div>
-
-      <RouterLink v-if="user?.role !== 'director'" to="/projects/add" class="btn btn--solid">
-        Добавить проект
-      </RouterLink>
+        <button
+          v-if="canCreate"
+          class="btn btn--solid"
+          @click="$router.push('/projects/add')"
+        >
+          Добавить новый
+        </button>
+      </div>
     </div>
 
-    <div class="table-wrap mt-4" v-if="filtered.length">
+    <!-- Фильтры -->
+    <div class="filters card card--surface">
+      <div class="filters-row">
+
+        <div class="filters-item">
+          <label class="label">Поиск</label>
+          <input v-model="search" class="input" placeholder="По названию или описанию..." />
+        </div>
+
+        <div class="filters-item">
+          <label class="label">Приоритет</label>
+          <select v-model="priority" class="input">
+            <option value="all">Все</option>
+            <option value="high">Высокий</option>
+            <option value="medium">Средний</option>
+            <option value="low">Низкий</option>
+          </select>
+        </div>
+
+        <div class="filters-item">
+          <label class="label">Статус</label>
+          <select v-model="status" class="input">
+            <option value="all">Все</option>
+            <option value="created">Новый</option>
+            <option value="in_progress">В работе</option>
+            <option value="checking">На проверке</option>
+            <option value="done">Завершён</option>
+            <option value="cancelled">Отменён</option>
+          </select>
+        </div>
+
+        <div class="filters-item">
+          <label class="label">Сортировка</label>
+          <select v-model="sort" class="input">
+            <option value="created_desc">Сначала новые</option>
+            <option value="created_asc">Сначала старые</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Таблица -->
+    <div class="table-wrapper mt-4">
       <table class="table">
         <thead>
           <tr>
             <th>Название</th>
-            <th>Дедлайн</th>
             <th>Приоритет</th>
-            <th>Исполнитель</th>
             <th>Статус</th>
-            <th v-if="user?.role !== 'director'">Действия</th>
+            <th>Дата</th>
+            <th style="width:120px;"></th>
           </tr>
         </thead>
 
         <tbody>
           <tr v-for="p in filtered" :key="p.id">
+            <td class="text-wrap">{{ p.items?.[0]?.title || '—' }}</td>
             <td>
-              <div class="title">{{ p.title }}</div>
-              <div class="muted">{{ p.description }}</div>
+              <span :class="['badge', priorityClass(p.items?.[0]?.priority)]">
+                {{ priorityLabel(p.items?.[0]?.priority) }}
+              </span>
             </td>
-            <td>{{ p.deadline || '—' }}</td>
-            <td>{{ p.priority }}</td>
-
-            <!-- Исполнитель -->
             <td>
-              <div v-if="p.assignee">{{ p.assignee }}</div>
-              <div v-else class="muted">—</div>
-
-              <details v-if="user?.role === 'manager'" style="margin-top:4px;">
-                <summary class="link">Назначить</summary>
-                <ul style="margin:6px 0 0 0; padding:0; list-style:none;">
-                  <li v-for="e in engineers()" :key="e.email" style="margin-top:4px;">
-                    <button class="btn btn--sm" @click="quickAssign(p, e.email)">{{ e.name }}</button>
-                  </li>
-                </ul>
-              </details>
+              <span :class="['badge', statusClass(p.status)]">
+                {{ statusLabel(p.status) }}
+              </span>
             </td>
+            <td>{{ formatDate(p.createdAt) }}</td>
 
-            <!-- Статус -->
             <td>
-              <span class="badge"
-                :class="{
-                  'badge--new': p.status==='Новая',
-                  'badge--progress': p.status==='В работе' || p.status==='На проверке',
-                  'badge--done': p.status==='Закрыта',
-                  'badge--open': p.status==='Отменена'
-                }">{{ p.status }}</span>
-
-              <details v-if="user?.role !== 'director'" style="margin-top:4px;">
-                <summary class="link">Изменить</summary>
-                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-                  <button v-for="s in STATUSES" :key="s" class="btn btn--sm" @click="quickSetStatus(p, s)">{{ s }}</button>
-                </div>
-              </details>
-            </td>
-
-            <!-- Действия -->
-            <td v-if="user?.role !== 'director'">
               <div class="actions">
-                <RouterLink :to="`/projects/${p.id}`" class="btn btn--outline">Открыть</RouterLink>
-                <RouterLink :to="`/projects/edit/${p.id}`" class="btn btn--outline">Редактировать</RouterLink>
-                <button v-if="user?.role === 'manager'" @click="confirmRemove(p.id)" class="btn btn--danger delete-btn">
-                  Удалить
+                <button class="btn btn--xs btn--outline"
+                        @click="$router.push('/projects/' + p.id)">
+                  Открыть
+                </button>
+
+                <button v-if="canEdit(p)"
+                        class="btn btn--xs btn--solid"
+                        @click="$router.push('/projects/' + p.id + '/edit')">
+                  Править
                 </button>
               </div>
             </td>
           </tr>
+
+          <tr v-if="filtered.length === 0">
+            <td colspan="5" class="muted">Ничего не найдено</td>
+          </tr>
+
         </tbody>
       </table>
     </div>
-
-    <p v-else class="muted">Проектов пока нет</p>
   </div>
 </template>
 
-<style scoped>
-.table-wrap { overflow:auto }
-.table { width:100%; border-collapse:collapse }
-th, td { padding:10px; border-bottom:1px solid var(--border) }
-.title { font-weight:600 }
-.actions { display:flex; gap:6px; flex-wrap:wrap }
-.badge { padding:2px 8px; border-radius:999px; font-size:12px }
-.badge--new { background:#dbeafe }
-.badge--progress { background:#fde68a }
-.badge--done { background:#bbf7d0 }
-.badge--open { background:#fecaca }
-</style>
+<script setup>
+import { ref, computed, onMounted } from "vue"
+import { currentUser } from "@/composables/useAuth"
+
+const orders = ref([])
+const search = ref("")
+const priority = ref("all")
+const status = ref("all")
+const sort = ref("created_desc")
+
+const token = localStorage.getItem("auth_token")
+
+async function loadOrders() {
+  const res = await fetch("/api/v1/orders", {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+
+  const data = await res.json()
+  if (data.success) orders.value = data.data
+}
+
+onMounted(loadOrders)
+
+// Фильтрация
+const filtered = computed(() => {
+  let list = [...orders.value]
+
+  if (search.value.trim()) {
+    const q = search.value.toLowerCase()
+    list = list.filter(o =>
+      JSON.stringify(o).toLowerCase().includes(q)
+    )
+  }
+
+  if (priority.value !== "all") {
+    list = list.filter(o => o.items?.[0]?.priority === priority.value)
+  }
+
+  if (status.value !== "all") {
+    list = list.filter(o => o.status === status.value)
+  }
+
+  if (sort.value === "created_desc") {
+    list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  } else {
+    list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  }
+
+  return list
+})
+
+// Роли
+const canCreate = computed(() =>
+  ["manager", "engineer"].includes(currentUser.value?.roles?.[0])
+)
+
+const canEdit = (p) =>
+  currentUser.value?.id === p.userId ||
+  currentUser.value?.roles?.includes("manager")
+
+// Форматтеры
+const formatDate = (d) =>
+  new Date(d).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })
+
+const priorityLabel = (p) => ({
+  high: "Высокий",
+  medium: "Средний",
+  low: "Низкий"
+}[p] || "—")
+
+const statusLabel = (s) => ({
+  created: "Новый",
+  in_progress: "В работе",
+  checking: "На проверке",
+  done: "Завершён",
+  cancelled: "Отменён"
+}[s] || "—")
+
+// CSS классы
+const priorityClass = (p) => ({
+  high: "badge--open",
+  medium: "badge--progress",
+  low: "badge--new"
+}[p])
+
+const statusClass = (s) => ({
+  created: "badge--new",
+  in_progress: "badge--progress",
+  checking: "badge--review",
+  done: "badge--done",
+  cancelled: "badge--open"
+}[s])
+
+// Экспорт CSV
+function exportCSV() {
+  const rows = filtered.value.map(o => ({
+    id: o.id,
+    title: o.items?.[0]?.title,
+    priority: o.items?.[0]?.priority,
+    status: o.status,
+    createdAt: o.createdAt
+  }))
+
+  const csv = [
+    "ID;Название;Приоритет;Статус;Дата",
+    ...rows.map(r => `${r.id};${r.title};${r.priority};${r.status};${r.createdAt}`)
+  ].join("\n")
+
+  const blob = new Blob([csv], { type: "text/csv" })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "orders.csv"
+  a.click()
+
+  URL.revokeObjectURL(url)
+}
+</script>

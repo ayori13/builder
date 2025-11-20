@@ -1,55 +1,39 @@
-<script setup>
-import { RouterLink } from 'vue-router'
-import ThemeToggle from './ThemeToggle.vue'
-import { useAuth } from '@/composables/useAuth'
-import { User, Settings, Wrench } from 'lucide-vue-next'
-
-const { user, logout } = useAuth()
-
-const roleIcon = {
-  engineer: Wrench,
-  manager: Settings,
-  director: User
-}
-</script>
-
 <template>
-  <header style="position:sticky;top:0;z-index:40;border-bottom:1px solid var(--header-border);
-                 backdrop-filter:saturate(180%) blur(8px); background:var(--header-bg)">
-    <div class="container" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
-      <div class="h1">Мои проекты</div>
+  <header class="app-header">
+    <div class="container flex items-center justify-between py-4">
 
-      <nav class="row">
-        <RouterLink class="btn btn--outline" to="/projects">Список</RouterLink>
-        <RouterLink v-if="user?.role !== 'director'" class="btn btn--solid" to="/projects/add">Добавить</RouterLink>
-        <RouterLink class="btn btn--outline" to="/reports">Отчёты</RouterLink>
+      <div class="flex items-center gap-4">
+        <h1 class="h3" style="cursor:pointer" @click="$router.push('/projects')">
+          Панель управления
+        </h1>
+
+        <span class="muted">({{ currentUser?.roles?.[0] }})</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+
+        <!-- Тема -->
         <ThemeToggle />
 
-        <div v-if="user" class="row" style="margin-left:12px;">
-          <component :is="roleIcon[user.role]" size="18" />
-          <span style="font-weight:600;">{{ roleLabel(user.role) }}</span>
-          <button @click="logout" class="btn btn--danger" style="margin-left:6px;">Выйти</button>
-        </div>
-      </nav>
+        <!-- Выход -->
+        <button class="btn btn--outline" @click="logoutUser">
+          Выйти
+        </button>
+
+      </div>
     </div>
   </header>
 
-  <main class="container sp-8">
+  <main>
     <slot />
   </main>
 </template>
 
-<script>
-export default {
-  methods: {
-    roleLabel(role) {
-      switch (role) {
-        case 'engineer': return 'Инженер'
-        case 'manager': return 'Менеджер'
-        case 'director': return 'Руководитель'
-        default: return ''
-      }
-    }
-  }
+<script setup>
+import ThemeToggle from "@/components/ThemeToggle.vue"
+import { currentUser, logout } from "@/composables/useAuth"
+
+function logoutUser() {
+  logout()
 }
 </script>

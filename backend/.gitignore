@@ -1,0 +1,36 @@
+# Игнорировать node_modules во всех сервисах
+node_modules/
+service_users/node_modules/
+service_orders/node_modules/
+api_gateway/node_modules/
+
+# Игнорировать логи
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Игнорировать локальные env-файлы
+.env
+.env.local
+.env.*.local
+
+# Кэш Jest
+coverage/
+.cache/
+.tmp/
+
+# Кэш Docker
+**/.dockerignore
+docker-compose.override.yml
+
+# Кэш редакторов
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# OS
+Desktop.ini
